@@ -1,0 +1,45 @@
+name: Sync Magazines to Obsidian
+
+# 控制运行时机：每周一、三、五的上午9点运行一次
+on:
+  schedule:
+    # 采用 Cron 表达式，分钟 小时 日 月 星期
+    # 这里设置的是 UTC 时间1点，对应北京时间9点
+    - cron: '0 1 * * 1,3,5'
+  # 也可以手动触发，方便测试
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. 检出（下载）我们自己的仓库代码
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. 设置Python环境
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      # 3. 安装依赖（用于下载文件的Python库）
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 lxml
+
+      # 4. 运行Python脚本，从源仓库获取最新外刊并下载
+      - name: Download latest magazines
+        run: |
+          python .github/scripts/download_mags.py
+
+      # 5. 配置Git，将下载的文件提交到我们自己的仓库
+      - name: Commit and push changes
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add .
+          # 如果有文件变化才提交
+          git diff --quiet && git diff --staged --quiet || git commit -m "Auto-update magazines"
+          git push
