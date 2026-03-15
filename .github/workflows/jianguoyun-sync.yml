@@ -1,4 +1,4 @@
-name: jianguoyun-sync.yml
+name: 同步外刊到坚果云
 
 on:
   schedule:
